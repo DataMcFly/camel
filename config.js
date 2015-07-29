@@ -6,6 +6,10 @@ module.exports = {
 		Author: 'Your Name',
 		DefaultImage: 'http://mysite.com/images/logo.png'
 	},
+	DraftInfo: {
+		User: "admin",
+		Password: "changeme"
+	},
 	Social: {
 		Twitter: "yourusername",
 		autoTweets: {

@@ -4,6 +4,7 @@
 
 var express = require('express');
 var compress = require('compression');
+var bodyParser = require('body-parser');
 var http = require('http');
 var fs = require('fs');
 var qfs = require('q-io/fs');
@@ -20,6 +21,8 @@ var Handlebars = require('handlebars');
 var config = require('./config');
 var version = require('./package.json').version;
 var Twitter = require('twitter');
+
+var basicAuth = require('basic-auth');
 
 var app = express();
 app.use(compress());
@@ -45,6 +48,11 @@ var footnoteIdRegex = /fnref\d+/g;
 var utcOffset = 5;
 var cacheResetTimeInMillis = 1800000;
 
+
+var draftAuthInfo = {
+	user: config.DraftInfo.User,
+	pass: config.DraftInfo.Password
+};
 
 //	set your twitter information...
 var twitterClient = new Twitter({
@@ -86,6 +94,19 @@ siteMetadata.CurrentYear = new Date().getFullYear();
 /***************************************************
  * HELPER METHODS								  *
  ***************************************************/
+
+// Middleware to require auth for routes
+function requireAuth(request, response, next) {
+	if (Object.values(draftAuthInfo).all(function (i) { typeof i !== 'undefined' && i.length > 0; })) {
+		var user = basicAuth(request);
+
+		if (!user || user.name !== draftAuthInfo.user || user.pass !== draftAuthInfo.pass) {
+		  response.set('WWW-Authenticate', 'Basic realm=Authorization Required');
+		  return response.status(401).send('You have to say the magic word.');
+		}
+	}
+    next();
+};
 
 
 String.prototype.capitalize = function() {
@@ -1300,6 +1321,16 @@ app.get('/count', function (request, response) {
 		response.status(200).send(count + ' articles, across ' + days + ' days that have at least one post.');
 	});
 });
+
+app.post('/render-draft', [requireAuth, bodyParser.urlencoded({extended: true})], function (request, response) {
+	var pieces = getLinesFromData(request.body.markdown);
+	pieces.metadata = _.union(pieces.metadata, ["@@ BodyClass=post"]);
+	//var titleIndex = pieces.metadata.findIndex(/^@@ Title=/);
+	//pieces.metadata[titleIndex] = "@@ Title=DRAFT – " + pieces.metadata[titleIndex].substr(9) + " – DRAFT";
+	var result = generateHtmlAndMetadataForLines(pieces);
+	response.send(result.html());
+});
+
 
 // Support for non-blog posts, such as /about, as well as years, such as /2014.
 app.get('/:slug', function (request, response) {
