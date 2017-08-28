@@ -1,6 +1,8 @@
-@@ Title=Test Page
-@@ BodyClass=post
-@@ HideHeader=true
+---
+Title: Test Page
+BodyClass: post
+HideHeader: true
+---
 
 This is the test page.. Just making sure everything still works....
 

@@ -1,3 +1,4 @@
-@@ Title=Home
-@@ BodyClass=homepage
-
+---
+Title: Home
+BodyClass: homepage
+---
